@@ -1,0 +1,10 @@
+import React,{useState} from 'react'
+import {Navigate,useNavigate} from 'react-router-dom'
+import {Sparkles,ArrowRight,ShieldCheck,Bot,BarChart3} from 'lucide-react'
+import {useAuth} from '../context/AuthContext'
+export default function Login(){
+ const {user,login}=useAuth(); const nav=useNavigate(); const [form,setForm]=useState({username:'',password:''}); const [error,setError]=useState(''); const [loading,setLoading]=useState(false)
+ if(user)return <Navigate to="/" replace/>
+ const submit=async e=>{e.preventDefault();setError('');setLoading(true);try{await login(form.username,form.password);nav('/')}catch(e){setError(e.message)}finally{setLoading(false)}}
+ return <div className="login-page"><section className="login-hero"><div className="hero-content"><div className="hero-brand"><Sparkles/>SupportDesk</div><h1>Resolve support faster.<br/>Keep every conversation organized.</h1><p>A customer support workspace for managing tickets, customers, team activity and reply suggestions in one place.</p><div className="hero-features"><div><Bot/><span>AI reply suggestions</span></div><div><ShieldCheck/><span>Role-based access</span></div><div><BarChart3/><span>Live operations dashboard</span></div></div></div></section><section className="login-panel"><form className="login-card" onSubmit={submit}><div><span className="eyebrow">WELCOME BACK</span><h2>Sign in to your workspace</h2><p>Use the admin or agent account configured on the backend.</p></div>{error&&<div className="error-box">{error}</div>}<label className="field"><span>Username</span><input autoFocus value={form.username} onChange={e=>setForm({...form,username:e.target.value})} required placeholder="admin"/></label><label className="field"><span>Password</span><input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required placeholder="••••••••"/></label><button className="btn primary login-btn" disabled={loading}>{loading?'Signing in...':<>Sign in <ArrowRight size={18}/></>}</button><small className="muted">JWT-secured session · Django REST API · MongoDB</small></form></section></div>
+}
