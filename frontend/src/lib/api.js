@@ -1,4 +1,8 @@
-const BASE=(import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/,'')
+const DEFAULT_API = import.meta.env.PROD
+  ? 'https://supportdesk-api-8xjm.onrender.com/api'
+  : 'http://localhost:8000/api'
+
+const BASE=(import.meta.env.VITE_API_URL || DEFAULT_API).replace(/\/$/,'')
 export const API_BASE=BASE
 const getToken=()=>localStorage.getItem('access')
 const saveTokens=(access,refresh)=>{ if(access)localStorage.setItem('access',access); if(refresh)localStorage.setItem('refresh',refresh) }
