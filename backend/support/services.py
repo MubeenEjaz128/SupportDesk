@@ -1,5 +1,7 @@
 import os
 import httpx
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from .models import ActivityLog
 
 def log_activity(actor, action, entity, summary, metadata=None):
@@ -11,6 +13,34 @@ def log_activity(actor, action, entity, summary, metadata=None):
         summary=summary,
         metadata=metadata or {},
     )
+
+def send_ticket_reply_email(ticket, body):
+    if not getattr(settings, 'SUPPORT_EMAIL_ENABLED', False):
+        return {'sent': False, 'reason': 'email_disabled'}
+    if not ticket.customer.email:
+        return {'sent': False, 'reason': 'customer_has_no_email'}
+
+    subject = f"[{ticket.ticket_number}] {ticket.subject}"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    to = [ticket.customer.email]
+
+    plain = (
+        f"Hi {ticket.customer.name},\n\n"
+        f"{body}\n\n"
+        f"Reference: {ticket.ticket_number}\n"
+        "SupportDesk"
+    )
+    html = (
+        f"<p>Hi {ticket.customer.name},</p>"
+        f"<div style=\"white-space:pre-wrap\">{body}</div>"
+        f"<p style=\"margin-top:24px;color:#667085\">Reference: {ticket.ticket_number}</p>"
+        "<p>SupportDesk</p>"
+    )
+
+    message = EmailMultiAlternatives(subject, plain, from_email, to)
+    message.attach_alternative(html, 'text/html')
+    message.send(fail_silently=False)
+    return {'sent': True}
 
 def suggest_reply(ticket, articles):
     key = os.getenv('AI_API_KEY', '').strip()
