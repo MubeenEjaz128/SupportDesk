@@ -9,8 +9,4 @@ else
   echo "MONGODB_URI is not configured yet. Starting API without database bootstrap."
 fi
 
-if [[ -n "${AI_API_KEY:-}" && -n "${AI_BASE_URL:-}" ]]; then
-  python manage.py check_ai_provider || true
-fi
-
 exec gunicorn supportdesk.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120
