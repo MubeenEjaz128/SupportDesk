@@ -1,72 +1,57 @@
 # SupportDesk
 
-A full-stack customer-support workspace built with **Django 6.1**, **Django REST Framework**, the **official Django MongoDB Backend**, and a **React/Vite** frontend.
+SupportDesk is a customer-support workspace built with Django, Django REST Framework, MongoDB and React/Vite.
 
-## Features
+## What it includes
 
-- JWT authentication and Admin / Supervisor / Agent roles
-- Customer directory with search, notes and tags
-- Ticket lifecycle: Open, Pending, Resolved, Closed
-- Priorities, categories, sources, assignees and ticket tags
-- Threaded customer replies and private internal notes
-- Reply suggestions using the OpenAI Responses API
-- Knowledge base used as context for reply suggestions
-- Dashboard ticket/customer metrics and workload distribution
-- Team directory and admin-only role changes
-- Activity/audit log
+- JWT login with Admin, Supervisor and Agent roles
+- Customer records and support history
+- Ticket workflow with status, priority, source, category and assignee
+- Customer replies and private internal notes
+- AI-assisted reply suggestions
+- Knowledge base
+- Dashboard metrics
+- Team management
+- Activity log
 - Django Admin
-- Demo seed command and production admin bootstrap
-- Vercel frontend + Render backend deployment configuration
+- Render backend and Vercel frontend configuration
 
-## Architecture
+## Stack
 
-```text
-React / Vite (Vercel)
-        |
-        | HTTPS + JWT
-        v
-Django REST API (Render)
-        |
-        +------> MongoDB Atlas
-        |
-        +------> OpenAI Responses API (optional; fallback reply works without key)
-```
+- Frontend: React + Vite
+- Backend: Django 6.1 + Django REST Framework
+- Database: MongoDB using the official Django MongoDB backend
+- AI provider: CodeCraft API through its OpenAI-compatible chat-completions endpoint
+- Backend hosting: Render
+- Frontend hosting: Vercel
 
-## Repository layout
+## Environment variables
 
-```text
-backend/              Django API
-frontend/             React/Vite SPA
-render.yaml           Render service blueprint
-vercel.json           Vercel monorepo build config
-```
-
-## Backend environment variables
-
-Copy `backend/.env.example` and configure these values in Render:
-
-| Variable | Required | Purpose |
-|---|---|---|
-| `SECRET_KEY` | Yes | Django signing secret |
-| `MONGODB_URI` | Yes | MongoDB Atlas connection URI |
-| `MONGODB_DB_NAME` | Yes | Database name, e.g. `supportdesk` |
-| `CORS_ALLOWED_ORIGINS` | Yes | Frontend origins, comma-separated |
-| `CSRF_TRUSTED_ORIGINS` | Yes | Trusted frontend origins |
-| `ADMIN_USERNAME` | Yes | Initial production admin username |
-| `ADMIN_PASSWORD` | Yes | Initial production admin password |
-| `ADMIN_EMAIL` | Recommended | Initial admin email |
-| `OPENAI_API_KEY` | Optional | Enables real AI suggestions |
-| `OPENAI_MODEL` | Optional | Defaults to `gpt-5.6-luna` |
-| `DEBUG` | No | Keep `False` in production |
-
-Render automatically provides `PORT` and `RENDER_EXTERNAL_HOSTNAME`.
-
-## Frontend environment variable
-
-Configure in Vercel:
+### Render
 
 ```env
-VITE_API_URL=https://YOUR-RENDER-SERVICE.onrender.com/api
+SECRET_KEY=...
+DEBUG=False
+MONGODB_URI=mongodb+srv://...
+MONGODB_DB_NAME=supportdesk
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=...
+ADMIN_PASSWORD=...
+AI_API_KEY=...
+AI_BASE_URL=https://codecraftapi.com/v1
+AI_MODEL=gpt-5.6-sol
+CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
+CSRF_TRUSTED_ORIGINS=https://your-frontend.vercel.app
+```
+
+Keep real credentials in Render/Vercel environment settings only. Do not commit them to GitHub.
+
+### Vercel
+
+The frontend currently falls back to the deployed Render API. You can also set:
+
+```env
+VITE_API_URL=https://supportdesk-api-8xjm.onrender.com/api
 ```
 
 ## Local backend
@@ -74,15 +59,20 @@ VITE_API_URL=https://YOUR-RENDER-SERVICE.onrender.com/api
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-# configure environment values
 python manage.py migrate
 python manage.py bootstrap_admin
 python manage.py runserver
 ```
 
-Optional demo records:
+On Windows activate with:
+
+```powershell
+.venv\Scripts\activate
+```
+
+Optional demo data:
 
 ```bash
 python manage.py seed_demo
@@ -93,7 +83,6 @@ python manage.py seed_demo
 ```bash
 cd frontend
 npm install
-cp .env.example .env
 npm run dev
 ```
 
@@ -113,9 +102,3 @@ npm run dev
 - `GET /api/activity/`
 - `/api/team/`
 - `GET /api/health/`
-
-## Production notes
-
-MongoDB's official Django backend uses MongoDB-compatible migrations for Django's `admin`, `auth`, and `contenttypes` apps. Those migration modules are committed under `backend/mongo_migrations/`. Business models use UUID primary keys while Django auth uses MongoDB ObjectIds.
-
-Do not commit real secrets. Store all secrets in Render/Vercel environment settings.
