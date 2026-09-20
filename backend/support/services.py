@@ -12,40 +12,86 @@ def log_activity(actor, action, entity, summary, metadata=None):
         metadata=metadata or {},
     )
 
-def _extract_output(data):
-    chunks = []
-    for item in data.get('output', []):
-        for content in item.get('content', []):
-            if content.get('type') == 'output_text' and content.get('text'):
-                chunks.append(content['text'])
-    return '\n'.join(chunks).strip()
-
 def suggest_reply(ticket, articles):
-    key = os.getenv('OPENAI_API_KEY', '').strip()
-    model = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
+    key = os.getenv('AI_API_KEY', '').strip()
+    base = os.getenv('AI_BASE_URL', 'https://codecraftapi.com/v1').strip().rstrip('/')
+    model = os.getenv('AI_MODEL', 'gpt-5.6-sol').strip()
+
     recent = list(ticket.messages.all().order_by('-created_at')[:8])
-    conversation = '\n'.join(f"{m.author_name or (m.author.username if m.author else 'Customer')}: {m.body}" for m in reversed(recent))
+    conversation = '\n'.join(
+        f"{m.author_name or (m.author.username if m.author else 'Customer')}: {m.body}"
+        for m in reversed(recent)
+    )
     kb = '\n\n'.join(f"{a.title}: {a.content[:1500]}" for a in articles[:5])
-    prompt = f"""Draft a helpful customer support reply for this ticket.
-Ticket: {ticket.ticket_number}\nSubject: {ticket.subject}\nDescription: {ticket.description}
-Recent conversation:\n{conversation or 'No messages yet.'}
-Knowledge base:\n{kb or 'No matching knowledge-base content.'}
-Rules: be concise, empathetic, practical, do not invent refunds, timelines, policies, or facts. Return only the reply text."""
+
+    system = (
+        "You are a customer support writing assistant. "
+        "Draft a concise, empathetic and practical reply. "
+        "Do not invent refunds, timelines, policies, account actions, or facts. "
+        "Return only the reply text."
+    )
+    prompt = f"""Ticket: {ticket.ticket_number}
+Subject: {ticket.subject}
+Description: {ticket.description}
+
+Recent conversation:
+{conversation or 'No messages yet.'}
+
+Knowledge base:
+{kb or 'No matching knowledge-base content.'}"""
+
     if not key:
         return {
-            'reply': f"Hi {ticket.customer.name},\n\nThanks for reaching out about \"{ticket.subject}\". I’ve reviewed the details you shared. We’re looking into this and will help you with the next appropriate step. If there’s any additional information or a screenshot that could help us reproduce the issue, please send it here.\n\nBest regards,\nSupport Team",
-            'provider': 'fallback', 'model': None,
+            'reply': (
+                f"Hi {ticket.customer.name},\n\n"
+                f"Thanks for reaching out about \"{ticket.subject}\". "
+                "I’ve reviewed the details you shared. We’re looking into this and will help "
+                "with the next appropriate step. If you have any additional information or a "
+                "screenshot that could help us reproduce the issue, please send it here.\n\n"
+                "Best regards,\nSupport Team"
+            ),
+            'provider': 'fallback',
+            'model': None,
         }
+
     try:
         response = httpx.post(
-            'https://api.openai.com/v1/responses',
-            headers={'Authorization': f'Bearer {key}', 'Content-Type': 'application/json'},
-            json={'model': model, 'input': prompt, 'max_output_tokens': 500},
-            timeout=45.0,
+            f"{base}/chat/completions",
+            headers={
+                'Authorization': f'Bearer {key}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': model,
+                'messages': [
+                    {'role': 'system', 'content': system},
+                    {'role': 'user', 'content': prompt},
+                ],
+                'temperature': 0.3,
+                'max_tokens': 700,
+            },
+            timeout=60.0,
         )
         response.raise_for_status()
-        text = _extract_output(response.json())
-        if not text: raise ValueError('AI response contained no text')
-        return {'reply': text, 'provider': 'openai', 'model': model}
+        payload = response.json()
+        text = (
+            payload.get('choices', [{}])[0]
+            .get('message', {})
+            .get('content', '')
+            .strip()
+        )
+        if not text:
+            raise ValueError('Provider response contained no reply text')
+        return {
+            'reply': text,
+            'provider': 'codecraft',
+            'model': payload.get('model') or model,
+            'usage': payload.get('usage', {}),
+        }
     except Exception as exc:
-        return {'reply': 'AI suggestion is temporarily unavailable. Please write a manual reply.', 'provider': 'error', 'model': model, 'error': str(exc)[:180]}
+        return {
+            'reply': 'AI suggestion is temporarily unavailable. Please write a manual reply.',
+            'provider': 'error',
+            'model': model,
+            'error': str(exc)[:180],
+        }
