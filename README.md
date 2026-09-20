@@ -1,58 +1,37 @@
 # SupportDesk
 
-SupportDesk is a customer-support workspace built with Django, Django REST Framework, MongoDB and React/Vite.
+SupportDesk is a full-stack customer-support workspace built with Django, Django REST Framework, MongoDB and React/Vite.
 
-## What it includes
+It has separate experiences for customers and support staff. Customers can create an account, open support requests and follow only their own conversations. Agents work an assigned/unassigned queue, supervisors can oversee the full operation, and admins manage staff access.
 
-- JWT login with Admin, Supervisor and Agent roles
-- Customer records and support history
-- Ticket workflow with status, priority, source, category and assignee
-- Customer replies and private internal notes
-- AI-assisted reply suggestions
-- Knowledge base
-- Dashboard metrics
-- Team management
+## Current features
+
+- Customer registration and login
+- Admin / Supervisor / Agent / Customer roles
+- Role-based backend access rules
+- Customer-only ticket ownership
+- Assigned + unassigned agent queue
+- Internal notes hidden from customers
+- Ticket status, priority, source, category and tags
+- Customer and staff replies
+- AI-assisted reply suggestions for support staff
+- Knowledge base / customer help center
+- Customer profile
+- Team account creation, role changes and activation controls
 - Activity log
+- SMTP-ready customer reply emails
 - Django Admin
 - Render backend and Vercel frontend configuration
 
 ## Stack
 
 - Frontend: React + Vite
-- Backend: Django 6.1 + Django REST Framework
+- Backend: Django + Django REST Framework
 - Database: MongoDB using the official Django MongoDB backend
-- AI provider: CodeCraft API through its OpenAI-compatible chat-completions endpoint
+- Authentication: JWT
+- AI: CodeCraft API through an OpenAI-compatible chat-completions endpoint
 - Backend hosting: Render
 - Frontend hosting: Vercel
-
-## Environment variables
-
-### Render
-
-```env
-SECRET_KEY=...
-DEBUG=False
-MONGODB_URI=mongodb+srv://...
-MONGODB_DB_NAME=supportdesk
-ADMIN_USERNAME=admin
-ADMIN_EMAIL=...
-ADMIN_PASSWORD=...
-AI_API_KEY=...
-AI_BASE_URL=https://codecraftapi.com/v1
-AI_MODEL=gpt-5.6-sol
-CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
-CSRF_TRUSTED_ORIGINS=https://your-frontend.vercel.app
-```
-
-Keep real credentials in Render/Vercel environment settings only. Do not commit them to GitHub.
-
-### Vercel
-
-The frontend currently falls back to the deployed Render API. You can also set:
-
-```env
-VITE_API_URL=https://supportdesk-api-8xjm.onrender.com/api
-```
 
 ## Local backend
 
@@ -66,16 +45,10 @@ python manage.py bootstrap_admin
 python manage.py runserver
 ```
 
-On Windows activate with:
+Windows:
 
 ```powershell
 .venv\Scripts\activate
-```
-
-Optional demo data:
-
-```bash
-python manage.py seed_demo
 ```
 
 ## Local frontend
@@ -86,19 +59,23 @@ npm install
 npm run dev
 ```
 
-## Main API routes
+## Main environment variables
 
-- `POST /api/auth/token/`
-- `POST /api/auth/token/refresh/`
-- `GET /api/auth/me/`
-- `GET /api/dashboard/stats/`
-- `/api/customers/`
-- `/api/tickets/`
-- `POST /api/tickets/{id}/messages/`
-- `POST /api/tickets/{id}/ai-suggest/`
-- `POST /api/tickets/{id}/assign-to-me/`
-- `POST /api/tickets/{id}/close/`
-- `/api/knowledge/`
-- `GET /api/activity/`
-- `/api/team/`
-- `GET /api/health/`
+See `backend/.env.example` for the complete list.
+
+```env
+MONGODB_URI=mongodb+srv://...
+MONGODB_DB_NAME=supportdesk
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=...
+ADMIN_PASSWORD=...
+AI_API_KEY=...
+AI_BASE_URL=https://codecraftapi.com/v1
+AI_MODEL=gpt-5.6-sol
+```
+
+Keep real credentials in Render/Vercel environment settings. Never commit them.
+
+## Project direction
+
+The staged roadmap is documented in `docs/IMPLEMENTATION_PLAN.md`.
