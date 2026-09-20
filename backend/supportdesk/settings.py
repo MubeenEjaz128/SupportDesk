@@ -83,6 +83,7 @@ STORAGES = {
 }
 
 CORS_ALLOWED_ORIGINS = csv_env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')
+CORS_ALLOWED_ORIGIN_REGEXES = csv_env('CORS_ALLOWED_ORIGIN_REGEXES', r'^https://.*\.vercel\.app$')
 CSRF_TRUSTED_ORIGINS = csv_env('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173')
 CORS_ALLOW_CREDENTIALS = True
 
